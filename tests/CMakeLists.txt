@@ -8,6 +8,8 @@ set(TEST_SOURCES
    test_empty.cc
    # test_chebyshev.cc
    # test_generic.cc
+   test_simple.cc
+   test_first_discr.cc
 )
 
 foreach(TEST_SOURCE ${TEST_SOURCES})
