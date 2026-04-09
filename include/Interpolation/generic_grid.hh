@@ -15,7 +15,7 @@ namespace Generic
  */
 struct StandardGrid {
 
-   enum class STRATEGY : unsigned {
+   enum class STRATEGY : unsigned {  //assign names to numbers, for trasparency!
       NAIVE = 0,
       FBF   = 1,
       SBF   = 2,
@@ -53,7 +53,7 @@ struct StandardGrid {
     * @return         The interpolated value
     */
    double interpolate(double t, const vector_d &fj, size_t start, size_t end,
-                      STRATEGY str = STRATEGY::FBF) const;
+                      STRATEGY str = STRATEGY::FBF) const; //default is FBF but it can be changed
    /**
     * @brief Interpolate the derivative of a view of a vector on the grid
     *

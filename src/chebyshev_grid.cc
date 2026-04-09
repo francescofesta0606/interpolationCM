@@ -70,7 +70,37 @@ double StandardGrid::interpolate(double t, const vector_d &fj, size_t start, siz
 } // StandardGrid::interpolate
 
 double StandardGrid::interpolate_der(double t, const vector_d &fj, size_t start, size_t end) const
-{} // StandardGrid::interpolate_der
+{
+   if (t < -1 || t > 1 || (end - start) != _p) {
+      throw std::domain_error("[StandardGrid::interpolate]: t=" + std::to_string(t)
+                              + " \\notin [-1, +1] OR view "
+                                "into fj of wrong size: ["
+                              + std::to_string(start) + ", " + std::to_string(end) + "]");
+   }
+
+   double den = 0;
+   for (size_t l = 0; l <= _p; l++) {
+      if (fabs(t - _tj[l]) < 1.0e-15) {
+         double sum = 0;
+         for (size_t i = start, j = 0; i <= end; i++, j++) {
+            sum += fj[i] * _Dij[j][l];
+         }
+         return sum;
+      }
+      den += _betaj[l] / (t - _tj[l]);
+   }
+
+   double sum = 0;
+   for (size_t i = start, j = 0; i <= end; i++, j++) {
+      sum += poli_weight_der(t, j, den) * fj[i];
+   }
+   return sum;
+}
+
+
+
+   
+
  
 double StandardGrid::poli_weight(double t, size_t j) const
 {
@@ -99,13 +129,50 @@ double StandardGrid::poli_weight(double t, size_t j, double den) const
 } // StandardGrid::poli_weight
  
 double StandardGrid::poli_weight_der(double t, size_t j) const
-{} // StandardGrid::poli_weight_der
- 
+{
+   if (t < -1 || t > 1) {
+      throw std::domain_error("[StandardGrid::poli_weight]: t=" + std::to_string(t)
+                              + " \\notin [-1, +1]");
+   }
+   double res = 0;
+   for (size_t i = 0; i <= _p; i++) {
+      if (fabs(t - _tj[i]) < 1.0e-15) return _Dij[j][i];
+      res += _Dij[j][i] * poli_weight(t, i);
+   }
+   return res;
+}
+
 double StandardGrid::poli_weight_der(double t, size_t j, double den) const
-{} // StandardGrid::poli_weight_der
+{
+   if (t < -1 || t > 1) {
+      throw std::domain_error("[StandardGrid::poli_weight]: t=" + std::to_string(t)
+                              + " \\notin [-1, +1]");
+   }
+   double res = 0;
+   for (size_t i = 0; i <= _p; i++) {
+      if (fabs(t - _tj[i]) < 1.0e-15) return _Dij[j][i];
+      res += _Dij[j][i] * poli_weight(t, i, den);
+   }
+   return res;
+}
 
 void StandardGrid::apply_D(vector_d &fj, size_t start, size_t end) const
-{} // StandardGrid::apply_D
+{
+   if (end - start != _p) {
+      throw std::invalid_argument("[StandardGrid::apply_D]: cannot apply "
+                                  "derivative matrix to partial vector.");
+   }
+   vector_d temp((end - start + 1), 0.);
+   for (size_t i = 0; i <= _p; i++) {
+      for (size_t j = 0, k = start; k <= end; k++, j++) {
+         temp[i] += fj[k] * _Dij[j][i];
+      }
+   }
+
+   for (size_t i = start; i <= end; i++) {
+      fj[i] = temp[i - start];
+   }
+}
 
 vector_d StandardGrid::discretize(const std::function<double(double)> &fnc) const
 {
